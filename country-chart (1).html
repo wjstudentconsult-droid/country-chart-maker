@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Country Chart Maker – สร้างชาร์ตเปรียบเทียบประเทศ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f1ea; --card:#ffffff; --ink:#26241f; --muted:#7a766c; --line:#e3ded2;
+    --brand:#1d5bd4; --brand-d:#1546a8; --danger:#c8372d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Noto Sans Thai","Segoe UI",system-ui,-apple-system,sans-serif;line-height:1.5}
+  .wrap{max-width:1040px;margin:0 auto;padding:24px 16px 60px}
+  h1{font-size:26px;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 20px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .card h2{font-size:16px;margin:0 0 14px;display:flex;align-items:center;gap:8px}
+  .num{display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;
+    font-size:13px;align-items:center;justify-content:center;flex:none}
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
+  input[type=text],input[type=number],select{
+    width:100%;padding:9px 11px;border:1px solid #cfc9bb;border-radius:8px;font:inherit;font-size:15px;background:#fff;color:var(--ink)}
+  input:focus,select:focus{outline:2px solid #9db9f0;border-color:var(--brand)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+  @media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+  .field{margin-bottom:12px}
+  .hint{font-size:12px;color:var(--muted);margin-top:3px}
+
+  .rows-head,.row{display:grid;grid-template-columns:30px 1fr 150px 36px;gap:8px;align-items:center}
+  .rows-head{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;padding:0 2px}
+  .row{margin-bottom:8px}
+  .idx{text-align:center;color:var(--muted);font-size:13px}
+  .cwrap{position:relative}
+  .cwrap input{padding-left:44px}
+  .cwrap .fp{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:26px;height:18px;object-fit:cover;
+    border-radius:3px;border:1px solid #0002;display:none}
+  .cwrap input.invalid{border-color:var(--danger);background:#fff5f4}
+  .dd{position:absolute;left:0;right:0;top:calc(100% + 2px);max-height:250px;overflow:auto;background:#fff;
+    border:1px solid #b9b2a2;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:30;display:none}
+  .ddi{display:flex;align-items:center;gap:10px;padding:7px 11px;cursor:pointer;font-size:14px}
+  .ddi img{width:24px;height:16px;object-fit:cover;border-radius:2px;border:1px solid #0002;flex:none}
+  .ddi small{color:var(--muted);margin-left:auto;font-size:11px}
+  .ddi.active,.ddi:hover{background:#e8effc}
+  .ddno{padding:10px 12px;color:var(--muted);font-size:13px}
+  .del{border:0;background:#f3ece9;color:var(--danger);border-radius:8px;height:38px;cursor:pointer;font-size:18px}
+  .del:hover{background:#f7d9d5}
+
+  .btns{display:flex;flex-wrap:wrap;gap:10px}
+  button.btn{border:1px solid #cfc9bb;background:#fff;color:var(--ink);padding:10px 18px;border-radius:9px;
+    font:inherit;font-size:15px;font-weight:600;cursor:pointer}
+  button.btn:hover{background:#f4f1ea}
+  button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  button.primary:hover{background:var(--brand-d)}
+  button.danger{color:var(--danger);border-color:#e6b7b2}
+  button.danger:hover{background:#fbeceb}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  #msg{margin-top:12px;font-size:14px;color:var(--danger);white-space:pre-line}
+  .preview{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+  #chart{width:100%;max-width:1000px;height:auto;display:none;margin:0 auto;border-radius:8px}
+  #empty{color:var(--muted);padding:50px 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🌍 Country Chart Maker</h1>
+  <p class="sub">สร้างชาร์ตจัดอันดับประเทศพร้อมธงชาติ แล้วดาวน์โหลดเป็นรูป PNG</p>
+
+  <!-- 1. Title -->
+  <div class="card">
+    <h2><span class="num">1</span>หัวข้อ</h2>
+    <div class="field">
+      <label for="title">หัวข้อชาร์ต</label>
+      <input type="text" id="title" placeholder="เช่น THE WORLD'S MOST FREE COUNTRIES">
+    </div>
+    <div class="grid2">
+      <div class="field" style="margin:0">
+        <label for="chartLabel">Label ของชาร์ต (ไม่บังคับ)</label>
+        <input type="text" id="chartLabel" placeholder="เช่น MOST FREE">
+      </div>
+      <div class="field" style="margin:0">
+        <label for="valueLabel">ชื่อ/หน่วยของตัวเลข (ไม่บังคับ)</label>
+        <input type="text" id="valueLabel" placeholder="เช่น Score (0–100)">
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Data rows -->
+  <div class="card">
+    <h2><span class="num">2</span>ข้อมูลประเทศ</h2>
+    <div class="rows-head"><span>#</span><span>ประเทศ (พิมพ์ภาษาอังกฤษ 1–2 ตัวอักษรแล้วเลือกจากรายการ)</span><span>ตัวเลข</span><span></span></div>
+    <div id="rows"></div>
+    <div class="btns" style="margin-top:8px">
+      <button class="btn" id="addRow" type="button">＋ เพิ่มแถวข้อมูล</button>
+      <button class="btn" id="sample" type="button">ใส่ข้อมูลตัวอย่าง</button>
+    </div>
+  </div>
+
+  <!-- 3. Source -->
+  <div class="card">
+    <h2><span class="num">3</span>การอ้างอิงข้อมูล</h2>
+    <input type="text" id="source" placeholder="เช่น Freedom Index (Atlantic Council), 2025">
+    <div class="hint">จะแสดงไว้ด้านล่างของชาร์ต</div>
+  </div>
+
+  <!-- 4. Style & Theme -->
+  <div class="card">
+    <h2><span class="num">4</span>รูปแบบและโทนสี</h2>
+    <div class="grid2">
+      <div>
+        <label for="style">รูปแบบชาร์ต</label>
+        <select id="style">
+          <option value="0">1. แท่งมน (Pill bar)</option>
+          <option value="1">2. แท่งเหลี่ยม (Square bar)</option>
+          <option value="2">3. แท่งไล่สี (Gradient bar)</option>
+          <option value="3">4. เส้นลูกอม (Lollipop)</option>
+          <option value="4">5. บล็อกแบ่งช่อง (Segmented)</option>
+        </select>
+      </div>
+      <div>
+        <label for="theme">โทนสี</label>
+        <select id="theme">
+          <option value="0">1. Ocean – ฟ้าบนพื้นครีม</option>
+          <option value="1">2. Sunset – แดงส้ม</option>
+          <option value="2">3. Forest – เขียว</option>
+          <option value="3">4. Royal – ม่วง</option>
+          <option value="4">5. Dark – โหมดมืด</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Actions -->
+  <div class="card">
+    <div class="btns">
+      <button class="btn primary" id="go" type="button">▶ ประมวลผล</button>
+      <button class="btn" id="dl" type="button" disabled>⬇ ดาวน์โหลด PNG</button>
+      <button class="btn danger" id="reset" type="button">↺ Reset ข้อมูล</button>
+    </div>
+    <div id="msg"></div>
+  </div>
+
+  <div class="preview">
+    <div id="empty">กรอกข้อมูลแล้วกด “ประมวลผล” เพื่อดูชาร์ตที่นี่</div>
+    <canvas id="chart"></canvas>
+  </div>
+</div>
+
+<script>
+/* ============ รายชื่อประเทศ/ดินแดน (code|ชื่อ|ชื่อที่ใช้ค้นหาเพิ่มเติม) ============ */
+const RAW = `
+af|Afghanistan
+ax|Åland Islands|Aland
+al|Albania
+dz|Algeria
+as|American Samoa
+ad|Andorra
+ao|Angola
+ai|Anguilla
+aq|Antarctica
+ag|Antigua and Barbuda
+ar|Argentina
+am|Armenia
+aw|Aruba
+au|Australia
+at|Austria
+az|Azerbaijan
+bs|Bahamas
+bh|Bahrain
+bd|Bangladesh
+bb|Barbados
+by|Belarus
+be|Belgium
+bz|Belize
+bj|Benin
+bm|Bermuda
+bt|Bhutan
+bo|Bolivia
+bq|Bonaire, Sint Eustatius and Saba
+ba|Bosnia and Herzegovina|Bosnia
+bw|Botswana
+bv|Bouvet Island
+br|Brazil
+io|British Indian Ocean Territory
+vg|British Virgin Islands
+bn|Brunei
+bg|Bulgaria
+bf|Burkina Faso
+bi|Burundi
+kh|Cambodia
+cm|Cameroon
+ca|Canada
+cv|Cape Verde|Cabo Verde
+ky|Cayman Islands
+cf|Central African Republic|CAR
+td|Chad
+cl|Chile
+cn|China|PRC
+cx|Christmas Island
+cc|Cocos (Keeling) Islands
+co|Colombia
+km|Comoros
+cg|Congo (Republic)|Republic of the Congo Congo-Brazzaville
+cd|DR Congo|Democratic Republic of the Congo Congo-Kinshasa DRC
+ck|Cook Islands
+cr|Costa Rica
+ci|Côte d'Ivoire|Ivory Coast Cote
+hr|Croatia
+cu|Cuba
+cw|Curaçao|Curacao
+cy|Cyprus
+cz|Czechia|Czech Republic
+dk|Denmark
+dj|Djibouti
+dm|Dominica
+do|Dominican Republic
+ec|Ecuador
+eg|Egypt
+sv|El Salvador
+gb-eng|England
+gq|Equatorial Guinea
+er|Eritrea
+ee|Estonia
+sz|Eswatini|Swaziland
+et|Ethiopia
+fk|Falkland Islands
+fo|Faroe Islands
+fj|Fiji
+fi|Finland
+fr|France
+gf|French Guiana
+pf|French Polynesia
+tf|French Southern Territories
+ga|Gabon
+gm|Gambia
+ge|Georgia
+de|Germany
+gh|Ghana
+gi|Gibraltar
+gr|Greece
+gl|Greenland
+gd|Grenada
+gp|Guadeloupe
+gu|Guam
+gt|Guatemala
+gg|Guernsey
+gn|Guinea
+gw|Guinea-Bissau
+gy|Guyana
+ht|Haiti
+hm|Heard Island and McDonald Islands
+hn|Honduras
+hk|Hong Kong
+hu|Hungary
+is|Iceland
+in|India
+id|Indonesia
+ir|Iran
+iq|Iraq
+ie|Ireland
+im|Isle of Man
+il|Israel
+it|Italy
+jm|Jamaica
+jp|Japan
+je|Jersey
+jo|Jordan
+kz|Kazakhstan
+ke|Kenya
+ki|Kiribati
+xk|Kosovo
+kw|Kuwait
+kg|Kyrgyzstan
+la|Laos
+lv|Latvia
+lb|Lebanon
+ls|Lesotho
+lr|Liberia
+ly|Libya
+li|Liechtenstein
+lt|Lithuania
+lu|Luxembourg
+mo|Macau|Macao
+mg|Madagascar
+mw|Malawi
+my|Malaysia
+mv|Maldives
+ml|Mali
+mt|Malta
+mh|Marshall Islands
+mq|Martinique
+mr|Mauritania
+mu|Mauritius
+yt|Mayotte
+mx|Mexico
+fm|Micronesia
+md|Moldova
+mc|Monaco
+mn|Mongolia
+me|Montenegro
+ms|Montserrat
+ma|Morocco
+mz|Mozambique
+mm|Myanmar|Burma
+na|Namibia
+nr|Nauru
+np|Nepal
+nl|Netherlands|Holland
+nc|New Caledonia
+nz|New Zealand
+ni|Nicaragua
+ne|Niger
+ng|Nigeria
+nu|Niue
+nf|Norfolk Island
+kp|North Korea|Korea DPRK
+mk|North Macedonia|Macedonia
+gb-nir|Northern Ireland
+mp|Northern Mariana Islands
+no|Norway
+om|Oman
+pk|Pakistan
+pw|Palau
+ps|Palestine
+pa|Panama
+pg|Papua New Guinea
+py|Paraguay
+pe|Peru
+ph|Philippines
+pn|Pitcairn Islands
+pl|Poland
+pt|Portugal
+pr|Puerto Rico
+qa|Qatar
+re|Réunion|Reunion
+ro|Romania
+ru|Russia|Russian Federation
+rw|Rwanda
+bl|Saint Barthélemy|St Barthelemy
+sh|Saint Helena
+kn|Saint Kitts and Nevis|St Kitts
+lc|Saint Lucia|St Lucia
+mf|Saint Martin
+pm|Saint Pierre and Miquelon
+vc|Saint Vincent and the Grenadines|St Vincent
+ws|Samoa
+sm|San Marino
+st|São Tomé and Príncipe|Sao Tome
+sa|Saudi Arabia
+gb-sct|Scotland
+sn|Senegal
+rs|Serbia
+sc|Seychelles
+sl|Sierra Leone
+sg|Singapore
+sx|Sint Maarten
+sk|Slovakia
+si|Slovenia
+sb|Solomon Islands
+so|Somalia
+za|South Africa
+gs|South Georgia and the South Sandwich Islands
+kr|South Korea|Korea Republic of Korea
+ss|South Sudan
+es|Spain
+lk|Sri Lanka
+sd|Sudan
+sr|Suriname
+sj|Svalbard and Jan Mayen
+se|Sweden
+ch|Switzerland
+sy|Syria
+tw|Taiwan
+tj|Tajikistan
+tz|Tanzania
+th|Thailand|Siam
+tl|Timor-Leste|East Timor
+tg|Togo
+tk|Tokelau
+to|Tonga
+tt|Trinidad and Tobago
+tn|Tunisia
+tr|Türkiye|Turkey Turkiye
+tm|Turkmenistan
+tc|Turks and Caicos Islands
+tv|Tuvalu
+ug|Uganda
+ua|Ukraine
+ae|United Arab Emirates|UAE Emirates
+gb|United Kingdom|UK Britain Great Britain
+us|United States|USA US America United States of America
+um|U.S. Minor Outlying Islands
+vi|U.S. Virgin Islands
+uy|Uruguay
+uz|Uzbekistan
+vu|Vanuatu
+va|Vatican City|Holy See
+ve|Venezuela
+vn|Vietnam|Viet Nam
+gb-wls|Wales
+wf|Wallis and Futuna
+eh|Western Sahara
+ye|Yemen
+zm|Zambia
+zw|Zimbabwe
+`;
+const COUNTRIES = RAW.trim().split('\n').map(l=>{
+  const [code,name,alts=''] = l.split('|');
+  return {code, name, alts: alts.toLowerCase(), lname: name.toLowerCase()};
+});
+const BY_NAME = new Map();
+COUNTRIES.forEach(c=>{
+  BY_NAME.set(c.lname, c);
+});
+// alias exact match (รองรับพิมพ์ UK, USA ฯลฯ)
+const ALIAS = {uk:'gb',usa:'us',us:'us',uae:'ae',america:'us',britain:'gb','ivory coast':'ci',turkey:'tr','czech republic':'cz',
+  'united states of america':'us','south korea':'kr','north korea':'kp',burma:'mm',swaziland:'sz','cabo verde':'cv',
+  'dr congo':'cd','democratic republic of the congo':'cd','republic of the congo':'cg',macedonia:'mk','east timor':'tl'};
+Object.entries(ALIAS).forEach(([k,code])=>{
+  const c = COUNTRIES.find(x=>x.code===code);
+  if(c && !BY_NAME.has(k)) BY_NAME.set(k,c);
+});
+const flagURL=(code,w=40)=>`https://flagcdn.com/w${w}/${code}.png`;
+const esc=s=>s.replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+/* ============ ธีมสี ============ */
+const THEMES=[
+  {bg:'#fbf6ea',text:'#2a2722',sub:'#6f6a5e',track:'#ebe4d5',c1:'#1d5bd4',c2:'#6ea3f7',rank:'#4a443d',rankText:'#fff'},
+  {bg:'#fff4ec',text:'#2d211b',sub:'#7a6558',track:'#f2e2d6',c1:'#d4352c',c2:'#f5a050',rank:'#4b3a33',rankText:'#fff'},
+  {bg:'#f2f7ec',text:'#1f2a21',sub:'#5d6b5e',track:'#dfe9d6',c1:'#1b7449',c2:'#80c791',rank:'#2f4034',rankText:'#fff'},
+  {bg:'#f6f2fc',text:'#251d33',sub:'#6b6080',track:'#e6def4',c1:'#5a2fb3',c2:'#b794f4',rank:'#3a2d57',rankText:'#fff'},
+  {bg:'#12151d',text:'#f1f3f7',sub:'#98a0b3',track:'#262b38',c1:'#12c2a3',c2:'#4f8ff0',rank:'#e7eaf1',rankText:'#12151d'}
+];
+
+/* ============ ตัวช่วย ============ */
+const $=id=>document.getElementById(id);
+const FONT='"Noto Sans Thai","Segoe UI",system-ui,sans-serif';
+const hex2rgb=h=>{
+  if(h.startsWith('rgb')) return h.match(/[\d.]+/g).slice(0,3).map(Number); // รองรับสีรูปแบบ rgb(r,g,b)
+  if(h.length===4) h='#'+h[1]+h[1]+h[2]+h[2]+h[3]+h[3];
+  return [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+};
+const mix=(a,b,t)=>{const A=hex2rgb(a),B=hex2rgb(b);return 'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')+')';};
+function rr(c,x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h/2));c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function wrap(c,text,maxW){
+  const out=[];
+  text.split('\n').forEach(par=>{
+    let line='';
+    for(const ch of par){
+      const t=line+ch;
+      if(c.measureText(t).width>maxW && line){
+        const sp=line.lastIndexOf(' ');
+        if(sp>0 && ch!==' '){out.push(line.slice(0,sp));line=line.slice(sp+1)+ch;}
+        else{out.push(line);line=ch.trim()===''?'':ch;}
+      }else line=t;
+    }
+    out.push(line);
+  });
+  return out;
+}
+const fmt=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
+
+/* ============ แถวข้อมูล + autocomplete ============ */
+const rowsEl=$('rows');
+function renumber(){[...rowsEl.children].forEach((r,i)=>r.querySelector('.idx').textContent=i+1);}
+function addRow(name='',val=''){
+  const row=document.createElement('div');row.className='row';
+  row.innerHTML=`<div class="idx"></div>
+    <div class="cwrap"><img class="fp" alt=""><input type="text" class="country" placeholder="พิมพ์ชื่อประเทศ เช่น Th, De, Un..." autocomplete="off" spellcheck="false"><div class="dd"></div></div>
+    <input type="number" class="val" step="any" placeholder="ตัวเลข">
+    <button class="del" type="button" title="ลบแถว">×</button>`;
+  rowsEl.appendChild(row);
+  attach(row);
+  row.querySelector('.val').value=val;
+  if(name) setCountry(row,BY_NAME.get(name.toLowerCase()));
+  row.querySelector('.del').onclick=()=>{ if(rowsEl.children.length>1){row.remove();renumber();} else {row.querySelector('.country').value='';row.querySelector('.val').value='';clearCountry(row);} };
+  renumber();
+  return row;
+}
+function setCountry(row,c){
+  const inp=row.querySelector('.country'),fp=row.querySelector('.fp');
+  if(!c)return;
+  inp.value=c.name;inp.dataset.code=c.code;inp.classList.remove('invalid');
+  fp.src=flagURL(c.code);fp.style.display='block';
+}
+function clearCountry(row){
+  const inp=row.querySelector('.country');inp.dataset.code='';inp.classList.remove('invalid');
+  row.querySelector('.fp').style.display='none';
+}
+function search(q){
+  q=q.trim().toLowerCase();
+  if(!q) return COUNTRIES.map(c=>[0,c]).map(x=>x[1]);
+  const res=[];
+  for(const c of COUNTRIES){
+    let s=-1;
+    if(c.lname.startsWith(q)) s=0;
+    else if(c.lname.split(/[\s\-(]+/).some(w=>w.startsWith(q))) s=1;
+    else if(c.alts.split(/\s+/).some(w=>w.startsWith(q)) || c.alts.startsWith(q)) s=1;
+    else if(c.lname.includes(q)) s=2;
+    if(s>=0) res.push([s,c]);
+  }
+  res.sort((a,b)=>a[0]-b[0]||a[1].name.localeCompare(b[1].name));
+  return res.map(x=>x[1]);
+}
+function attach(row){
+  const inp=row.querySelector('.country'),dd=row.querySelector('.dd');
+  let items=[],idx=-1;
+  function draw(){
+    items=search(inp.value);idx=items.length&&inp.value.trim()?0:-1;
+    if(!items.length){dd.innerHTML='<div class="ddno">ไม่พบประเทศที่ตรงกับที่พิมพ์</div>';}
+    else dd.innerHTML=items.map((c,i)=>`<div class="ddi${i===idx?' active':''}" data-i="${i}"><img loading="lazy" src="${flagURL(c.code)}" alt=""><span>${esc(c.name)}</span><small>${c.code.toUpperCase()}</small></div>`).join('');
+    dd.style.display='block';
+  }
+  function close(){dd.style.display='none';}
+  function pick(c){setCountry(row,c);close();row.querySelector('.val').focus();}
+  function hl(){
+    [...dd.querySelectorAll('.ddi')].forEach((el,i)=>el.classList.toggle('active',i===idx));
+    const a=dd.querySelector('.ddi.active');if(a)a.scrollIntoView({block:'nearest'});
+  }
+  inp.addEventListener('input',()=>{inp.dataset.code='';row.querySelector('.fp').style.display='none';inp.classList.remove('invalid');draw();});
+  inp.addEventListener('focus',()=>{inp.select();draw();});
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'){e.preventDefault();if(dd.style.display==='none')draw();else{idx=Math.min(items.length-1,idx+1);hl();}}
+    else if(e.key==='ArrowUp'){e.preventDefault();idx=Math.max(0,idx-1);hl();}
+    else if(e.key==='Enter'){ if(dd.style.display!=='none'&&items[idx]){e.preventDefault();pick(items[idx]);} }
+    else if(e.key==='Escape'){close();}
+  });
+  dd.addEventListener('mousedown',e=>{
+    e.preventDefault();
+    const el=e.target.closest('.ddi');if(el)pick(items[+el.dataset.i]);
+  });
+  inp.addEventListener('blur',()=>{
+    close();
+    const v=inp.value.trim();
+    if(!v){clearCountry(row);return;}
+    if(inp.dataset.code)return;
+    const exact=BY_NAME.get(v.toLowerCase());
+    if(exact){setCountry(row,exact);return;}
+    const r=search(v);
+    if(r.length===1){setCountry(row,r[0]);return;}
+    inp.classList.add('invalid');
+  });
+}
+
+/* ============ เก็บข้อมูล ============ */
+function collect(){
+  const items=[],errs=[];
+  [...rowsEl.children].forEach((row,i)=>{
+    const inp=row.querySelector('.country'),vEl=row.querySelector('.val');
+    const name=inp.value.trim(),vs=vEl.value.trim();
+    if(!name&&!vs)return;
+    const c=BY_NAME.get(name.toLowerCase());
+    if(!c){errs.push(`แถว ${i+1}: ไม่พบชื่อประเทศ “${name||'(ว่าง)'}” — กรุณาเลือกจากรายการ dropdown`);inp.classList.add('invalid');return;}
+    const v=parseFloat(vs);
+    if(vs===''||isNaN(v)){errs.push(`แถว ${i+1}: ${c.name} ยังไม่ได้กรอกตัวเลข`);return;}
+    items.push({name:c.name,code:c.code,value:v});
+  });
+  return {items,errs};
+}
+
+/* ============ วาดชาร์ต ============ */
+const canvas=$('chart');
+const flagCache={};
+function loadFlag(code){
+  if(!flagCache[code])flagCache[code]=new Promise(res=>{
+    const im=new Image();im.crossOrigin='anonymous';
+    im.onload=()=>res(im);im.onerror=()=>res(null);
+    setTimeout(()=>res(null),9000);
+    im.src=flagURL(code,160);
+  });
+  return flagCache[code];
+}
+async function fontsReady(){
+  try{
+    await Promise.race([
+      Promise.all(['400','600','700','800'].map(w=>document.fonts.load(`${w} 18px "Noto Sans Thai"`))),
+      new Promise(r=>setTimeout(r,1500))
+    ]);
+  }catch(e){}
+}
+let token=0,processed=false;
+
+async function render(){
+  const my=++token;
+  const {items,errs}=collect();
+  const msg=$('msg');
+  msg.textContent=errs.join('\n');
+  if(!items.length){
+    if(!errs.length)msg.textContent='กรุณากรอกข้อมูลประเทศและตัวเลขอย่างน้อย 1 แถว';
+    return;
+  }
+  items.sort((a,b)=>b.value-a.value);
+  const T=THEMES[+$('theme').value],style=+$('style').value;
+  $('go').disabled=true;
+  await fontsReady();
+  const imgs=await Promise.all(items.map(it=>loadFlag(it.code)));
+  $('go').disabled=false;
+  if(my!==token)return;
+
+  const W=1000,PAD=44,S=2,rowH=56,R=18;
+  const m=document.createElement('canvas').getContext('2d');
+
+  // หัวข้อ
+  const title=$('title').value.trim()||'Untitled';
+  const f=s=>`800 ${s}px ${FONT}`;
+  let fs=54;
+  while(fs>34){m.font=f(fs);if(m.measureText(title).width<=W-PAD*2)break;fs-=2;}
+  m.font=f(fs);
+  const tl=wrap(m,title,W-PAD*2),tlh=fs*1.25;
+  const chartLabel=$('chartLabel').value.trim(),valueLabel=$('valueLabel').value.trim();
+  const hasHeader=!!(chartLabel||valueLabel);
+
+  // ชื่อประเทศ
+  m.font=`600 20px ${FONT}`;
+  const nameColW=Math.min(235,Math.max(...items.map(i=>m.measureText(i.name).width)));
+  const nameRight=PAD+nameColW,flagCx=nameRight+34,rankCx=flagCx+40,chartRight=W-PAD;
+
+  // แหล่งอ้างอิง
+  let src=$('source').value.trim();
+  if(src&&!/^(source|ที่มา|แหล่งที่มา|อ้างอิง|ref)/i.test(src))src='Source: '+src;
+  m.font=`italic 400 15px ${FONT}`;
+  const sl=src?wrap(m,src,W-PAD*2):[];
+
+  // ความสูง
+  let y=PAD+6;
+  const titleTop=y;y+=tl.length*tlh+14;
+  const headerTop=y;if(hasHeader)y+=52;
+  const rowsTop=y;y+=items.length*rowH+10;
+  const footTop=y;if(sl.length)y+=sl.length*22+10;
+  const H=Math.ceil(y+PAD*0.6);
+
+  canvas.width=W*S;canvas.height=H*S;
+  const c=canvas.getContext('2d');c.scale(S,S);
+  c.fillStyle=T.bg;c.fillRect(0,0,W,H);
+  c.textBaseline='middle';
+
+  // title
+  c.fillStyle=T.text;c.textAlign='center';c.font=f(fs);
+  tl.forEach((t,i)=>c.fillText(t,W/2,titleTop+tlh*i+tlh/2));
+
+  // header label
+  if(hasHeader){
+    const hy=headerTop+28;
+    if(chartLabel){
+      c.textAlign='left';c.font=`800 26px ${FONT}`;c.fillStyle=T.text;
+      try{c.letterSpacing='2px';}catch(e){}
+      c.fillText(chartLabel.toUpperCase(),PAD,hy);
+      try{c.letterSpacing='0px';}catch(e){}
+    }
+    if(valueLabel){
+      c.textAlign='right';c.font=`italic 600 15px ${FONT}`;c.fillStyle=T.sub;
+      c.fillText(valueLabel,chartRight,hy+2);
+    }
+  }
+
+  // rows
+  const max=Math.max(...items.map(i=>i.value));
+  const n=items.length;
+  items.forEach((it,i)=>{
+    const cy=rowsTop+i*rowH+rowH/2;
+    const col=mix(T.c1,T.c2,n>1?i/(n-1):0);
+    const ratio=max>0?Math.max(0,it.value)/max:0;
+    const vt=fmt.format(it.value);
+
+    // ชื่อ
+    let nf=20;c.font=`600 ${nf}px ${FONT}`;
+    while(nf>13&&c.measureText(it.name).width>nameColW){nf--;c.font=`600 ${nf}px ${FONT}`;}
+    c.textAlign='right';c.fillStyle=T.text;c.fillText(it.name,nameRight,cy+1);
+
+    // แท่ง
+    c.font=`700 20px ${FONT}`;
+    const tw=c.measureText(vt).width;
+    if(style<=2){
+      const bs=rankCx,trackW=chartRight-bs;
+      const minLen=Math.max(110,R+tw+34);
+      const len=Math.min(trackW,Math.max(minLen,ratio*trackW));
+      const radius=style===1?4:R;
+      rr(c,bs,cy-R,trackW,R*2,radius);c.fillStyle=T.track;c.fill();
+      rr(c,bs,cy-R,len,R*2,radius);
+      if(style===2){const g=c.createLinearGradient(bs,0,bs+len,0);g.addColorStop(0,mix(col,'#000000',.3));g.addColorStop(1,col);c.fillStyle=g;}
+      else c.fillStyle=col;
+      c.fill();
+      c.textAlign='right';c.fillStyle='#fff';c.fillText(vt,bs+len-16,cy+1);
+    }else if(style===3){
+      const bs=rankCx,trackW=chartRight-bs-96;
+      const len=Math.max(40,ratio*trackW);
+      rr(c,bs,cy-2,trackW,4,2);c.fillStyle=T.track;c.fill();
+      rr(c,bs,cy-3,len,6,3);c.fillStyle=col;c.fill();
+      c.beginPath();c.arc(bs+len,cy,15,0,Math.PI*2);c.fillStyle=col;c.fill();
+      c.beginPath();c.arc(bs+len,cy,6,0,Math.PI*2);c.fillStyle=T.bg;c.fill();
+      c.textAlign='left';c.fillStyle=T.text;c.fillText(vt,bs+len+26,cy+1);
+    }else{
+      const bs=rankCx+26,trackW=chartRight-bs-96,segs=28,gap=3;
+      const sw=(trackW-gap*(segs-1))/segs;
+      const filled=ratio>0?Math.max(1,Math.round(ratio*segs)):0;
+      for(let k=0;k<segs;k++){
+        rr(c,bs+k*(sw+gap),cy-14,sw,28,3);
+        c.fillStyle=k<filled?col:T.track;c.fill();
+      }
+      c.textAlign='left';c.fillStyle=T.text;c.fillText(vt,bs+trackW+14,cy+1);
+    }
+
+    // ธงชาติ (วงกลม)
+    const im=imgs[i];
+    c.save();c.beginPath();c.arc(flagCx,cy,R,0,Math.PI*2);c.clip();
+    if(im){
+      const sc=Math.max(R*2/im.naturalWidth,R*2/im.naturalHeight),dw=im.naturalWidth*sc,dh=im.naturalHeight*sc;
+      c.drawImage(im,flagCx-dw/2,cy-dh/2,dw,dh);
+    }else{
+      c.fillStyle='#b8b8b8';c.fillRect(flagCx-R,cy-R,R*2,R*2);
+      c.fillStyle='#fff';c.font=`700 13px ${FONT}`;c.textAlign='center';c.fillText(it.code.slice(0,2).toUpperCase(),flagCx,cy+1);
+    }
+    c.restore();
+    c.beginPath();c.arc(flagCx,cy,R,0,Math.PI*2);c.lineWidth=3;c.strokeStyle=T.rank;c.stroke();
+
+    // วงกลมอันดับ
+    c.beginPath();c.arc(rankCx,cy,R,0,Math.PI*2);c.fillStyle=T.rank;c.fill();
+    c.lineWidth=3;c.strokeStyle=T.bg;c.stroke();
+    c.fillStyle=T.rankText;c.textAlign='center';c.font=`700 ${i+1>99?12:16}px ${FONT}`;c.fillText(String(i+1),rankCx,cy+1);
+  });
+
+  // แหล่งอ้างอิง
+  if(sl.length){
+    c.textAlign='right';c.fillStyle=T.sub;c.font=`italic 400 15px ${FONT}`;
+    sl.forEach((t,i)=>c.fillText(t,W-PAD,footTop+11+i*22));
+  }
+
+  canvas.style.display='block';$('empty').style.display='none';
+  $('dl').disabled=false;processed=true;
+}
+
+/* ============ ปุ่มต่าง ๆ ============ */
+$('addRow').onclick=()=>{const r=addRow();r.querySelector('.country').focus();};
+$('go').onclick=render;
+$('style').onchange=()=>{if(processed)render();};
+$('theme').onchange=()=>{if(processed)render();};
+$('dl').onclick=()=>{
+  try{
+    canvas.toBlob(b=>{
+      if(!b){alert('ไม่สามารถสร้างไฟล์ภาพได้');return;}
+      const a=document.createElement('a');
+      const name=($('title').value.trim()||'country-chart').replace(/[\\/:*?"<>|]+/g,'').slice(0,60)||'country-chart';
+      a.href=URL.createObjectURL(b);a.download=name+'.png';
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+    },'image/png');
+  }catch(e){
+    alert('ดาวน์โหลดไม่สำเร็จ: ไม่สามารถโหลดรูปธงจากอินเทอร์เน็ตได้ กรุณาตรวจสอบการเชื่อมต่อแล้วกดประมวลผลอีกครั้ง');
+  }
+};
+function resetAll(){
+  token++;processed=false;
+  ['title','chartLabel','valueLabel','source'].forEach(id=>$(id).value='');
+  $('style').value='0';$('theme').value='0';
+  rowsEl.innerHTML='';for(let i=0;i<5;i++)addRow();
+  canvas.style.display='none';$('empty').style.display='block';
+  $('dl').disabled=true;$('msg').textContent='';$('go').disabled=false;
+}
+$('reset').onclick=resetAll;
+$('sample').onclick=()=>{
+  $('title').value="THE WORLD'S MOST FREE COUNTRIES";
+  $('chartLabel').value='MOST FREE';
+  $('valueLabel').value='Score (0–100)';
+  $('source').value='Freedom Index (Atlantic Council), 2025';
+  const data=[['Denmark',93.7],['Luxembourg',91.8],['Sweden',91.5],['Finland',91.4],['Switzerland',90.9]];
+  rowsEl.innerHTML='';
+  data.forEach(d=>addRow(d[0],d[1]));
+};
+
+resetAll();
+</script>
+</body>
+</html>
